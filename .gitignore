@@ -1,0 +1,13 @@
+# set up by claudecube.sh
+.venv/
+__pycache__/
+
+# your own cube and settings
+cube.json
+face_style.txt
+
+# made on each run
+face_preview.png
+.last_face_sha
+push_face.log
+usage.json
