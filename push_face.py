@@ -1,8 +1,7 @@
 """Render the Claude usage face and upload it to the cube as the custom face.
 
 usage: .venv/bin/python push_face.py                 # fetch usage, render, upload
-       .venv/bin/python push_face.py --if-changed    # upload only when the numbers changed,
-                                                     # or the "updated HH:MM" stamp is HEARTBEAT old
+       .venv/bin/python push_face.py --if-changed    # upload only when the picture would change
        .venv/bin/python push_face.py --find          # forget the saved cube and look for it again
 
 The first run looks for the cube's JieLi chip (the Bluetooth side that stores files) and saves
@@ -25,9 +24,8 @@ from bleak import BleakScanner   # noqa: E402
 
 CONF = os.path.join(HERE, "cube.json")         # {"mac": "AA:BB:CC:DD:EE:FF"}
 PNG = os.path.join(HERE, "face_preview.png")    # last picture sent, for a look on the Mac
-STAMP = os.path.join(HERE, ".last_face_sha")    # "<content sha> <upload epoch>"
+STAMP = os.path.join(HERE, ".last_face_sha")    # sha of the last picture sent
 COMPANY_ID = 0xB1B1   # manufacturer id in the cube's JieLi-side advertisement
-HEARTBEAT = 30 * 60   # refresh the clock this often even when the numbers hold still (spares the cube's flash)
 NOT_FOUND = ("cube not found: switch it on, keep it close to the Mac, "
              "and close the MikuCube phone app if it is connected")
 
@@ -80,18 +78,16 @@ async def main():
         os.remove(CONF)
     usage = usage_source.get_usage()
     now = time.time()
-    # compare the face without its clock, so the clock alone never forces an upload
-    sha = hashlib.sha256(face_styles.render(usage, now).tobytes()).hexdigest()
+    face_styles.render(usage, now).save(PNG)
+    data = cp.encode_image_file(PNG)
+    sha = hashlib.sha256(data).hexdigest()
     try:
-        last_sha, last_t = open(STAMP).read().split()
-        last_t = float(last_t)
-    except (OSError, ValueError):
-        last_sha, last_t = "", 0.0
-    if only_changed and sha == last_sha and now - last_t < HEARTBEAT - 60:
+        last_sha = open(STAMP).read().split()[0]
+    except (OSError, IndexError):
+        last_sha = ""
+    if only_changed and sha == last_sha:
         print("unchanged:", usage_source.format_text(usage))
         return
-    face_styles.render(usage, now, updated=now).save(PNG)
-    data = cp.encode_image_file(PNG)
     mac = saved_mac() or await discover_mac()
     quiet = lambda s: None if s.startswith(("->", "<-", "block")) else print(s, flush=True)
     async with cp.CubeClient(await find(mac), log=quiet) as c:
@@ -100,7 +96,7 @@ async def main():
         if not ba or b"10000001.RES" not in ba:
             await c.set_face("10000001.RES",
                              json_text='{"name":"自定义背景","id":"10000001.RES","md5":"","rcnt":1,"edly":0}')
-    open(STAMP, "w").write(f"{sha} {now:.0f}")
+    open(STAMP, "w").write(sha)
     print(time.strftime("uploaded %H:%M:", time.localtime(now)), usage_source.format_text(usage))
 
 

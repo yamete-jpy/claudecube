@@ -1,7 +1,6 @@
 """Alternative 296x240 layouts for the cube's Claude usage face.
 
 Pick one by writing its letter to face_style.txt (default "C"); push_face.py uses render().
-B, C and E also show when the picture was sent ("updated HH:MM").
   A bars    - stacked rows, big %, thick bars
   B rings   - two ring gauges side by side
   C hero    - giant 5-hour number, week as a footer line (default)
@@ -49,14 +48,6 @@ def brand(d, x, y, size, ink=CREAM, mark=CORAL):
     d.text((x + size * 0.85, y + size * 0.42), "Claude", font=F(AV, size, AV_DEMI), fill=ink, anchor="ls")
 
 
-def stamp(d, updated, x, y, ink=CREAM, soft=GREY):
-    """'updated HH:MM' (local time), right-aligned on baseline y."""
-    hm = time.strftime("%H:%M", time.localtime(updated))
-    f_hm = F(MONO, 19, 1)
-    d.text((x, y), hm, font=f_hm, fill=ink, anchor="rs")
-    d.text((x - 4 - d.textlength(hm, font=f_hm), y), "updated", font=F(MONO, 13), fill=soft, anchor="rs")
-
-
 def pill(d, box, fill, r=None):
     x0, y0, x1, y1 = box
     d.rounded_rectangle(box, radius=r if r is not None else (y1 - y0) // 2, fill=fill)
@@ -69,20 +60,17 @@ def bar(d, x0, y0, x1, y1, p, track, color):
 
 
 # --------------------------------------------------------------------------- A
-def style_a(usage, now, updated=None):
+def style_a(usage, now):
     return rf.render(usage, now)
 
 
 # --------------------------------------------------------------------------- B
-def style_b(usage, now, updated=None):
+def style_b(usage, now):
     p5, r5, p7, r7 = values(usage, now)
     im = Image.new("RGB", (W, H), BG)
     d = ImageDraw.Draw(im)
     brand(d, 28, 26, 24)
-    if updated:
-        stamp(d, updated, W - 26, 35)
-    else:
-        d.text((W - 26, 35), "usage", font=F(MONO, 15), fill=GREY, anchor="rs")
+    d.text((W - 26, 35), "usage", font=F(MONO, 15), fill=GREY, anchor="rs")
     for cx, label, p, r in ((76, "5H", p5, r5), (220, "7D", p7, r7)):
         cy, R, wd = 130, 56, 14
         box = (cx - R, cy - R, cx + R, cy + R)
@@ -102,17 +90,16 @@ def style_b(usage, now, updated=None):
 
 
 # --------------------------------------------------------------------------- C
-def style_c(usage, now, updated=None):
+def style_c(usage, now):
     p5, r5, p7, r7 = values(usage, now)
     im = Image.new("RGB", (W, H), BG)
     d = ImageDraw.Draw(im)
     # The real screen has rounded corners and a bezel lip: keep corner items well inside.
     brand(d, 34, 30, 22)
-    if updated:  # time this picture was sent to the cube, top right
-        stamp(d, updated, W - 30, 38)
+    d.text((W - 30, 38), "5-hour", font=F(MONO, 15), fill=GREY, anchor="rs")
     d.text((W // 2, 124), f"{p5:.0f}%", font=F(MONO, 84, 1), fill=level(p5, ok=CREAM), anchor="ms")
     bar(d, 18, 136, W - 18, 154, p5, TRACK, level(p5))
-    d.text((W // 2, 178), "5-hour · resets in " + rf._left(r5, now), font=F(MONO, 16, 1), fill=GREY, anchor="ms")
+    d.text((W // 2, 178), "resets in " + rf._left(r5, now), font=F(MONO, 16, 1), fill=GREY, anchor="ms")
     d.line((30, 190, W - 30, 190), fill=TRACK, width=2)
     d.text((36, 216), "7D", font=F(AV, 21, AV_DEMI), fill=CORAL, anchor="ls")
     bar(d, 72, 203, 194, 215, p7, TRACK, level(p7))
@@ -125,7 +112,7 @@ N_BG, N_PANEL, N_EDGE, N_INK = (115, 230, 239), (236, 252, 253), (36, 128, 148),
 N_SOFT, N_EMPTY, N_FILL = (70, 140, 155), (186, 232, 238), (214, 74, 148)
 
 
-def style_d(usage, now, updated=None):
+def style_d(usage, now):
     p5, r5, p7, r7 = values(usage, now)
     im = Image.new("RGB", (W, H), N_BG)
     d = ImageDraw.Draw(im)
@@ -154,15 +141,12 @@ def style_d(usage, now, updated=None):
 P_BG, P_INK, P_CORAL, P_GREY, P_TRACK, P_RULE = (240, 238, 230), (31, 30, 29), (196, 98, 66), (118, 113, 103), (221, 216, 203), (205, 199, 185)
 
 
-def style_e(usage, now, updated=None):
+def style_e(usage, now):
     p5, r5, p7, r7 = values(usage, now)
     im = Image.new("RGB", (W, H), P_BG)
     d = ImageDraw.Draw(im)
     brand(d, 28, 26, 24, ink=P_INK, mark=P_CORAL)
-    if updated:
-        stamp(d, updated, W - 26, 35, ink=P_INK, soft=P_GREY)
-    else:
-        d.text((W - 26, 35), "usage", font=F(MONO, 15), fill=P_GREY, anchor="rs")
+    d.text((W - 26, 35), "usage", font=F(MONO, 15), fill=P_GREY, anchor="rs")
     d.line((14, 48, W - 14, 48), fill=P_RULE, width=2)
     d.line((148, 64, 148, 222), fill=P_RULE, width=2)
     for x0, cap, p, r in ((14, "5 HOURS", p5, r5), (162, "7 DAYS", p7, r7)):
@@ -174,7 +158,7 @@ def style_e(usage, now, updated=None):
 
 
 # --------------------------------------------------------------------------- F
-def style_f(usage, now, updated=None):
+def style_f(usage, now):
     p5, r5, p7, r7 = values(usage, now)
     im = Image.new("RGB", (W, H), BG)
     d = ImageDraw.Draw(im)
@@ -199,9 +183,8 @@ def selected():
         return "C"
 
 
-def render(usage, now=None, style=None, updated=None) -> Image.Image:
-    """updated = epoch seconds to print as "updated HH:MM" (style C); None leaves it out."""
-    return STYLES[style or selected()](usage, now or time.time(), updated)
+def render(usage, now=None, style=None) -> Image.Image:
+    return STYLES[style or selected()](usage, now or time.time())
 
 
 if __name__ == "__main__":
@@ -216,7 +199,7 @@ if __name__ == "__main__":
     os.makedirs(out, exist_ok=True)
     for state, u in samples.items():
         for k, fn in STYLES.items():
-            fn(u, now, now).save(os.path.join(out, f"{k}-{state}.png"))
+            fn(u, now).save(os.path.join(out, f"{k}-{state}.png"))
     sheet = Image.new("RGB", (W * 3 + 40, (H + 10) * 4 + 10), (60, 60, 60))
     for i, (state, k) in enumerate((s, k) for s in samples for k in STYLES):
         im = Image.open(os.path.join(out, f"{k}-{state}.png"))
