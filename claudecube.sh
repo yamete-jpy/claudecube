@@ -5,6 +5,7 @@
 #   ./claudecube.sh now          send a fresh picture right away
 #   ./claudecube.sh style C      change the look (A to F, see README)
 #   ./claudecube.sh find         forget the saved cube and look for it again
+#   ./claudecube.sh connected-only on|off   update only while the cube's earbuds are connected to this Mac
 #   ./claudecube.sh log          show what the auto-update has been doing
 #   ./claudecube.sh uninstall    stop the auto-update
 set -e
@@ -81,6 +82,14 @@ find)
   need_setup
   "$PY" push_face.py --find
   ;;
+connected-only)
+  case "$2" in
+    on)  touch .only_when_connected; echo "On: the cube updates only while its earbuds are connected to this Mac." ;;
+    off) rm -f .only_when_connected; echo "Off: the cube updates whenever it is nearby." ;;
+    *)   [ -f .only_when_connected ] && echo "connected-only is on" || echo "connected-only is off"
+         echo "Use  ./claudecube.sh connected-only on  or  off" ;;
+  esac
+  ;;
 log)
   if [ -f "$LOG" ]; then tail -n 20 "$LOG"; else echo "No log yet."; fi
   ;;
@@ -90,6 +99,6 @@ uninstall)
   echo "Auto-update stopped. The cube keeps the last picture until you choose another face in the MikuCube app."
   ;;
 *)
-  sed -n '2,9p' "$0" | sed 's/^# \{0,1\}//'
+  sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'
   ;;
 esac

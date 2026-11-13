@@ -45,6 +45,7 @@ Run these from inside the `claudecube` folder:
 | `./claudecube.sh style B` | Change the look (A to F, see below) |
 | `./claudecube.sh log` | See what the auto-update has been doing |
 | `./claudecube.sh find` | Look for the cube again, for example after you get a new cube |
+| `./claudecube.sh connected-only on` | Update only while the cube's earbuds are connected to this Mac (`off` to undo) |
 | `./claudecube.sh uninstall` | Stop the auto-update |
 
 ## Styles

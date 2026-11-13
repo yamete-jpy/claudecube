@@ -45,6 +45,7 @@ cd claudecube
 | `./claudecube.sh style B` | เปลี่ยนหน้าตา (A ถึง F ดูด้านล่าง) |
 | `./claudecube.sh log` | ดูว่าตัวอัปเดตอัตโนมัติทำอะไรไปบ้าง |
 | `./claudecube.sh find` | หา cube ใหม่ (เช่น เปลี่ยนเครื่องใหม่) |
+| `./claudecube.sh connected-only on` | อัปเดตเฉพาะตอนหูฟังของ cube ต่อกับ Mac อยู่ (`off` เพื่อยกเลิก) |
 | `./claudecube.sh uninstall` | หยุดอัปเดตอัตโนมัติ |
 
 ## หน้าตาให้เลือก

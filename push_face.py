@@ -4,6 +4,9 @@ usage: .venv/bin/python push_face.py                 # fetch usage, render, uplo
        .venv/bin/python push_face.py --if-changed    # upload only when the picture would change
        .venv/bin/python push_face.py --find          # forget the saved cube and look for it again
 
+With the file .only_when_connected present (./claudecube.sh connected-only on), --if-changed runs
+do nothing at all while macOS doesn't list the cube's earbuds as connected.
+
 The first run looks for the cube's JieLi chip (the Bluetooth side that stores files) and saves
 its address in cube.json, so later runs only talk to your own cube.
 """
@@ -11,6 +14,7 @@ import asyncio
 import hashlib
 import json
 import os
+import subprocess
 import sys
 import time
 
@@ -25,6 +29,7 @@ from bleak import BleakScanner   # noqa: E402
 CONF = os.path.join(HERE, "cube.json")         # {"mac": "AA:BB:CC:DD:EE:FF"}
 PNG = os.path.join(HERE, "face_preview.png")    # last picture sent, for a look on the Mac
 STAMP = os.path.join(HERE, ".last_face_sha")    # sha of the last picture sent
+ONLY_CONNECTED = os.path.join(HERE, ".only_when_connected")
 COMPANY_ID = 0xB1B1   # manufacturer id in the cube's JieLi-side advertisement
 NOT_FOUND = ("cube not found: switch it on, keep it close to the Mac, "
              "and close the MikuCube phone app if it is connected")
@@ -42,6 +47,17 @@ def _save(mac: bytes) -> bytes:
     json.dump({"mac": text}, open(CONF, "w"))
     print("found cube, saved to cube.json:", text, flush=True)
     return mac
+
+
+def earbuds_connected() -> bool:
+    """True when macOS lists a "... CUBEFACE" Bluetooth device as connected."""
+    try:
+        out = subprocess.run(["system_profiler", "SPBluetoothDataType", "-json"],
+                             capture_output=True, text=True, timeout=30).stdout
+        info = json.loads(out)["SPBluetoothDataType"][0]
+    except (OSError, subprocess.SubprocessError, ValueError, KeyError, IndexError):
+        return True   # can't tell: don't block the update
+    return any("CUBEFACE" in name.upper() for dev in info.get("device_connected", []) for name in dev)
 
 
 async def discover_mac():
@@ -74,6 +90,8 @@ async def find(mac, tries=3):
 
 async def main():
     only_changed = "--if-changed" in sys.argv
+    if only_changed and os.path.exists(ONLY_CONNECTED) and not earbuds_connected():
+        return   # quietly: this runs every 5 minutes
     if "--find" in sys.argv and os.path.exists(CONF):
         os.remove(CONF)
     usage = usage_source.get_usage()

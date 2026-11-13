@@ -5,6 +5,7 @@ __pycache__/
 # your own cube and settings
 cube.json
 face_style.txt
+.only_when_connected
 
 # made on each run
 face_preview.png
